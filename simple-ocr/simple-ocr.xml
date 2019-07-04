@@ -11,8 +11,7 @@
 
     <!-- the input document URL -->
     <var-def name="ocr_input" overwrite="false">
-        <!-- <var name="original_document_url" /> -->
-        http://aa-materials.s3.amazonaws.com/Materials/ML_Auto/PDFs/Document-01.pdf
+        <var name="original_document_url" />
     </var-def>
 
     <!-- comma-separated list of up to 3 formats (one of: txt, html, xml, xmlForCorrectedImage) -->
