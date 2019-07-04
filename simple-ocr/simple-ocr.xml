@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+    <!-- BEGIN CONFIGURATION -->
+
+    <!-- the input document URL -->
+    <var-def name="ocr_input">
+        <var name="original_document_url" />
+    </var-def>
+
+    <!-- comma-separated list of up to 3 formats (one of: txt, html, xml, xmlForCorrectedImage) -->
+    <var-def name="ocr_export_format">
+        html,xml
+    </var-def>
+
+    <!-- comma-separated list of languages (default: English) -->
+    <var-def name="ocr_language">
+        English
+    </var-def>
+    
+    <!-- whether to use cache or not (default: true) -->
+    <var-def name="ocr_use_cache">
+        true
+    </var-def>
+    
+    <!-- the name of the cache datastore (default: ocr_cache) -->
+    <var-def name="ocr_cache_datastore">
+        ocr_cache
+    </var-def>
+    
+    <!-- whether to correct skew or not (default: true) -->
+    <var-def name="ocr_correct_skew">
+        true
+    </var-def>
+    
+    <!-- whether to correct orientation or not (default: true) -->
+    <var-def name="ocr_correct_orientation">
+        true
+    </var-def>
+    
+    <!-- a list of custom regions in JSON format (default: empty) -->
+    <var-def name="ocr_custom_regions">
+        <!-- Example: [{"page":1,"left":0,"top":0,"right":800,"bottom":600, "type":"BT_Text" }] -->
+        []
+    </var-def>
+
+    <!-- whether to ues only custom regions or not (default: false) -->
+    <var-def name="ocr_use_only_custom_regions">
+        false
+    </var-def>
+    
+    <!-- the total time in seconds to wait for the OCR to complete (default: 300 = 5 minutes) -->
+    <var-def name="ocr_timeout">
+        300
+    </var-def>
+    
+    <!-- the total time in seconds to wait for a status query to complete (default: 10) -->
+    <var-def name="ocr_completion_polling_timeout_seconds">
+        10
+    </var-def>
+    
+    <!-- the total time in seconds between sequential status queries (default: 15) -->
+    <var-def name="ocr_completion_polling_interval_seconds">
+        15
+    </var-def>
+
+    <!-- remove garbage (excess dots that are smaller than a certain size) from the image (default: -1 (automatic)) -->
+    <var-def name="ocr_remove_garbage_size">
+        -1
+    </var-def>
+    
+    <!-- END CONFIGURATION -->
+
+	<!-- 
+		OCR Plugin Documentation: https://kb.workfusion.com/display/WF/OCR+Plugin
+	-->
+
+  	<var-def name="ocr_document">
+    	<http url="${ocr_input}"/>
+  	</var-def>
+    <var-def name="ocr_document_hash">
+    	<script return="org.apache.commons.codec.digest.DigestUtils.md5Hex(ocr_document.toBinary())"/>
+ 	</var-def>
+    
+    <create-datastore name="${ocr_cache_datastore}">
+    	<datastore-column name="md5" />
+    	<datastore-column name="format" />
+    	<datastore-column name="value" />
+	</create-datastore>
+  
+    <script><![CDATA[ 
+     // Split takes a regex and Java thinks that | is a modifier 
+     // which is why it is escaped with \
+     sql_format_list = '{{ocr_export_format}}'.split('\\|').collect{ it -> "'${it}'" }.join(',') 
+    ]]></script>
+    
+    <var-def name="cache_lookup_result">
+      <datastore name="${ocr_cache_datastore}">
+          SELECT * FROM @this 
+          	WHERE md5 = '${ocr_document_hash}'
+            	AND format IN (${sql_format_list});
+      </datastore>
+    </var-def>
+    
+    <var-def name="is_cached">
+    	<!-- 
+        	If not all formats are cached, we can just invoke OCR with all the formats. 
+        	ABBY's pricing model counts number of documents, not formats. 
+        -->
+    	<script><![CDATA[
+			(ocr_use_cache && cache_lookup_result.wrappedObject.size() == ocr_export_format.toList().size())
+		]]></script>
+    </var-def>
+  
+    <var-def name="ocr_results" />
+    
+  	<case>
+      <if condition="${is_cached}">
+        <var-def name="ocr_result" />
+      	<script><![CDATA[
+            def results = []
+            for (def row : cache_lookup_result.wrappedObject) {
+            	results.put(row.get("format"), row.get("value"))
+            }
+            
+        	ocr_result = [
+              source: ocr_input.toString(),
+              results: results,
+            ]
+        ]]></script>
+      </if>
+      <else>
+        <var-def name="ocr_results">
+            <ocr 
+                 export-format="${ocr_export_format}"
+                 language="${ocr_language}"
+                 correct-skew="${ocr_correct_skew}"
+                 correct-orientation="${ocr_correct_orientation}"
+                 custom-regions="${ocr_custom_regions}"
+                 remove-garbage-size="${ocr_remove_garbage_size}"
+                 timeout="${ocr_timeout}"
+                 completion-polling-timeout-seconds="${ocr_completion_polling_timeout_seconds}"
+                 completion-polling-interval-seconds="${ocr_completion_polling_interval_seconds}">
+              <ocr-image>
+                <var name="ocr_document" />
+              </ocr-image>
+            </ocr>
+        </var-def>
+        <script><![CDATA[
+          def results = [:]
+          ocr_results.get(0).wrappedObject.results.each { key, value -> 
+          	results.put(key, new String(value))
+          }
+          
+          def gson = new com.google.gson.Gson();
+          /* global */ jsonValueMaps = []
+          results.each { key, value -> 
+          	  jsonValueMaps << gson.toJson([
+                md5: ocr_document_hash.toString(), 
+                format: key, 
+                value: value
+              ])
+          }
+          
+          /* global */ ocr_result = [
+            source: ocr_input.toString(),
+            results: results,
+          ]
+        ]]></script>
+          
+        <loop item="jsonValueMap">
+        	<list><script return="jsonValueMaps" /></list>
+          	<body>
+            	<insert-datastore datastore-name="${ocr_cache_datastore}" json-value-map="${jsonValueMap}" />
+          	</body>
+        </loop>
+      </else>
+    </case>
+
+    <export include-original-data="true">
+    	<single-column name="ocr_result" value="${ocr_result}" />
+    </export>
+
+</config>
