@@ -1,71 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
 
+	<!-- 
+		Name: Simple OCR 
+		Author: @veselink1 (Veselin Karaganev)
+		Version: 0.2.1
+	-->
+
     <!-- BEGIN CONFIGURATION -->
 
     <!-- the input document URL -->
-    <var-def name="ocr_input">
-        <var name="original_document_url" />
+    <var-def name="ocr_input" overwrite="false">
+        <!-- <var name="original_document_url" /> -->
+        http://aa-materials.s3.amazonaws.com/Materials/ML_Auto/PDFs/Document-01.pdf
     </var-def>
 
     <!-- comma-separated list of up to 3 formats (one of: txt, html, xml, xmlForCorrectedImage) -->
-    <var-def name="ocr_export_format">
+    <var-def name="ocr_export_format" overwrite="false">
         html,xml
     </var-def>
 
     <!-- comma-separated list of languages (default: English) -->
-    <var-def name="ocr_language">
+    <var-def name="ocr_language" overwrite="false">
         English
     </var-def>
     
-    <!-- whether to use cache or not (default: true) -->
-    <var-def name="ocr_use_cache">
-        true
+    <!-- the name of the cache datastore (default: ocr_cache) -->
+    <var-def name="ocr_cache_datastore" overwrite="false">
+        ocr_cache
     </var-def>
     
-    <!-- the name of the cache datastore (default: ocr_cache) -->
-    <var-def name="ocr_cache_datastore">
+    <!-- the name of the cache bucket (default: ocr_cache) -->
+    <var-def name="ocr_cache_bucket" overwrite="false">
         ocr_cache
     </var-def>
     
     <!-- whether to correct skew or not (default: true) -->
-    <var-def name="ocr_correct_skew">
+    <var-def name="ocr_correct_skew" overwrite="false">
         true
     </var-def>
     
     <!-- whether to correct orientation or not (default: true) -->
-    <var-def name="ocr_correct_orientation">
+    <var-def name="ocr_correct_orientation" overwrite="false">
         true
     </var-def>
     
     <!-- a list of custom regions in JSON format (default: empty) -->
-    <var-def name="ocr_custom_regions">
+    <var-def name="ocr_custom_regions" overwrite="false">
         <!-- Example: [{"page":1,"left":0,"top":0,"right":800,"bottom":600, "type":"BT_Text" }] -->
         []
     </var-def>
 
     <!-- whether to ues only custom regions or not (default: false) -->
-    <var-def name="ocr_use_only_custom_regions">
+    <var-def name="ocr_use_only_custom_regions" overwrite="false">
         false
     </var-def>
     
+    <!-- comma-separated list of allowed region types (default: empty; one of: BT_Table,BT_Text,BT_Barcode,BT_VectorPicture,BT_RasterPicture) -->
+    <var-def name="ocr_allowed_region_types" overwrite="false">
+    	
+    </var-def>
+    
     <!-- the total time in seconds to wait for the OCR to complete (default: 300 = 5 minutes) -->
-    <var-def name="ocr_timeout">
+    <var-def name="ocr_timeout" overwrite="false">
         300
     </var-def>
     
     <!-- the total time in seconds to wait for a status query to complete (default: 10) -->
-    <var-def name="ocr_completion_polling_timeout_seconds">
+    <var-def name="ocr_completion_polling_timeout_seconds" overwrite="false">
         10
     </var-def>
     
     <!-- the total time in seconds between sequential status queries (default: 15) -->
-    <var-def name="ocr_completion_polling_interval_seconds">
+    <var-def name="ocr_completion_polling_interval_seconds" overwrite="false">
         15
     </var-def>
 
     <!-- remove garbage (excess dots that are smaller than a certain size) from the image (default: -1 (automatic)) -->
-    <var-def name="ocr_remove_garbage_size">
+    <var-def name="ocr_remove_garbage_size" overwrite="false">
         -1
     </var-def>
     
@@ -89,41 +101,36 @@
 	</create-datastore>
   
     <script><![CDATA[ 
-     // Split takes a regex and Java thinks that | is a modifier 
-     // which is why it is escaped with \
-     sql_format_list = '{{ocr_export_format}}'.split('\\|').collect{ it -> "'${it}'" }.join(',') 
+    	sql_format_list = ocr_export_format.toString().split(',').collect{ it -> "'${it}'" }.join(',') 
     ]]></script>
     
     <var-def name="cache_lookup_result">
       <datastore name="${ocr_cache_datastore}">
+   		<template>
           SELECT * FROM @this 
           	WHERE md5 = '${ocr_document_hash}'
             	AND format IN (${sql_format_list});
+        </template>
       </datastore>
     </var-def>
     
-    <var-def name="is_cached">
-    	<!-- 
-        	If not all formats are cached, we can just invoke OCR with all the formats. 
-        	ABBY's pricing model counts number of documents, not formats. 
-        -->
-    	<script><![CDATA[
-			(ocr_use_cache && cache_lookup_result.wrappedObject.size() == ocr_export_format.toList().size())
-		]]></script>
-    </var-def>
+    <script><![CDATA[
+       	// If not all formats are cached, we can just invoke OCR with all the formats. 
+       	// ABBY's pricing model counts number of documents, not formats. 
+    	/* global */ is_cached = (cache_lookup_result.wrappedObject.size() == ocr_export_format.toList().size())
+    ]]></script>
   
     <var-def name="ocr_results" />
     
   	<case>
       <if condition="${is_cached}">
-        <var-def name="ocr_result" />
       	<script><![CDATA[
-            def results = []
+            def results = [:]
             for (def row : cache_lookup_result.wrappedObject) {
             	results.put(row.get("format"), row.get("value"))
             }
             
-        	ocr_result = [
+        	/* global */ ocr_result = [
               source: ocr_input.toString(),
               results: results,
             ]
@@ -137,6 +144,7 @@
                  correct-skew="${ocr_correct_skew}"
                  correct-orientation="${ocr_correct_orientation}"
                  custom-regions="${ocr_custom_regions}"
+                 allowed-region-types="${ocr_allowed_region_types}"
                  remove-garbage-size="${ocr_remove_garbage_size}"
                  timeout="${ocr_timeout}"
                  completion-polling-timeout-seconds="${ocr_completion_polling_timeout_seconds}"
@@ -146,20 +154,34 @@
               </ocr-image>
             </ocr>
         </var-def>
+        
         <script><![CDATA[
           def results = [:]
-          ocr_results.get(0).wrappedObject.results.each { key, value -> 
-          	results.put(key, new String(value))
-          }
-          
-          def gson = new com.google.gson.Gson();
-          /* global */ jsonValueMaps = []
-          results.each { key, value -> 
-          	  jsonValueMaps << gson.toJson([
-                md5: ocr_document_hash.toString(), 
-                format: key, 
-                value: value
-              ])
+          try {
+	          ocr_results.get(0).wrappedObject.results.each { key, value -> 
+	          	if (!value) {
+	          		throw new RuntimeException("Converting '${ocr_input}' to '${key}' failed! The OCR plugin returned '${value}'!")
+	          	}
+	          	results.put(key, new String(value))
+	          }
+          } 
+          finally {
+          	  // Even if the document wasn't successfully 
+          	  // converted to one of the formats, the other 
+          	  // results should still be inserted in the cache.
+	          def gson = new com.google.gson.Gson();
+	          def formatsInCache = cache_lookup_result.wrappedObject.collect { it.get("format") }
+	          
+	          /* global */ jsonValueMaps = []
+	          results.each { format, value -> 
+	          	if (!formatsInCache.contains(format)) {
+	          	  jsonValueMaps << gson.toJson([
+	                md5: ocr_document_hash.toString(), 
+	                format: format, 
+	                value: value
+	              ])
+              	}
+	          }
           }
           
           /* global */ ocr_result = [
