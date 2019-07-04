@@ -25,14 +25,19 @@
         English
     </var-def>
     
-    <!-- the name of the cache datastore (default: ocr_cache) -->
+    <!-- the name of the cache datastore (default: simple_ocr_cache) -->
     <var-def name="ocr_cache_datastore" overwrite="false">
-        ocr_cache
+       	simple_ocr_cache
     </var-def>
     
-    <!-- the name of the cache bucket (default: ocr_cache) -->
+    <!-- the name of the cache bucket (default: doc-upload) -->
     <var-def name="ocr_cache_bucket" overwrite="false">
-        ocr_cache
+        doc-upload
+    </var-def>
+    
+    <!-- the path in the cache bucket (default: ocr) -->
+    <var-def name="ocr_cache_key" overwrite="false">
+        ocr
     </var-def>
     
     <!-- whether to correct skew or not (default: true) -->
@@ -97,7 +102,7 @@
     <create-datastore name="${ocr_cache_datastore}">
     	<datastore-column name="md5" />
     	<datastore-column name="format" />
-    	<datastore-column name="value" />
+    	<datastore-column name="link" />
 	</create-datastore>
   
     <script><![CDATA[ 
@@ -107,7 +112,7 @@
     <var-def name="cache_lookup_result">
       <datastore name="${ocr_cache_datastore}">
    		<template>
-          SELECT * FROM @this 
+          SELECT (format, link) FROM @this 
           	WHERE md5 = '${ocr_document_hash}'
             	AND format IN (${sql_format_list});
         </template>
@@ -127,7 +132,7 @@
       	<script><![CDATA[
             def results = [:]
             for (def row : cache_lookup_result.wrappedObject) {
-            	results.put(row.get("format"), row.get("value"))
+            	results.put(row.get("format"), row.get("link"))
             }
             
         	/* global */ ocr_result = [
@@ -137,7 +142,7 @@
         ]]></script>
       </if>
       <else>
-        <var-def name="ocr_results">
+        <var-def name="raw_ocr_results">
             <ocr 
                  export-format="${ocr_export_format}"
                  language="${ocr_language}"
@@ -156,32 +161,68 @@
         </var-def>
         
         <script><![CDATA[
-          def results = [:]
-          try {
-	          ocr_results.get(0).wrappedObject.results.each { key, value -> 
-	          	if (!value) {
-	          		throw new RuntimeException("Converting '${ocr_input}' to '${key}' failed! The OCR plugin returned '${value}'!")
+        	String getExtForFormat(String format) {
+        		switch (format) {
+        			case "txt": return "txt";
+        			case "html": return "html";
+        			case "xml": return "xml";
+        			case "xmlForCorrectedImage": return "xml";
+        			case "pdfSearchable": return "pdf";
+        		}
+        		throw new RuntimeException("Unrecognized OCR export format '${format}'!")
+        	}
+        
+        	/* global */ ocr_result_items = []
+	        raw_ocr_results.get(0).wrappedObject.results.each { format, data -> 
+	          	if (!data) {
+	          		throw new RuntimeException("Converting '${ocr_input}' to '${format}' failed! The OCR plugin returned '${data}'!")
 	          	}
-	          	results.put(key, new String(value))
-	          }
-          } 
-          finally {
-          	  // Even if the document wasn't successfully 
-          	  // converted to one of the formats, the other 
-          	  // results should still be inserted in the cache.
-	          def gson = new com.google.gson.Gson();
-	          def formatsInCache = cache_lookup_result.wrappedObject.collect { it.get("format") }
-	          
-	          /* global */ jsonValueMaps = []
-	          results.each { format, value -> 
-	          	if (!formatsInCache.contains(format)) {
-	          	  jsonValueMaps << gson.toJson([
-	                md5: ocr_document_hash.toString(), 
-	                format: format, 
-	                value: value
-	              ])
-              	}
-	          }
+	          	
+	          	ocr_result_items << [
+	          		format: format, 
+	          		data: data, 
+	          		extension: getExtForFormat(format)
+	          	]
+	        }
+        ]]></script>
+        
+        <var-def name="ocr_result_links">
+	        <s3 bucket="${ocr_cache_bucket}">
+		        <loop item="ocr_result_item">
+		        	<list><script return="ocr_result_items" /></list>
+		        	<body>
+		        		<s3-put 
+			        		path="${ocr_cache_key}/${UUID.randomUUID()}.${ocr_result_item.wrappedObject.extension}" 
+			        		content-type="application/octet-stream"
+			        		content-disposition="inline">
+		        			<script return="ocr_result_item.wrappedObject.data" />
+        				</s3-put>
+		        	</body>
+		        </loop>
+	        </s3>
+        </var-def>
+        
+        <script><![CDATA[
+          def gson = new com.google.gson.Gson();
+          def formatsInCache = cache_lookup_result.wrappedObject.collect { it.get("format") }
+          
+          /* global */ jsonValueMaps = []
+          def index = 0;
+          def results = ocr_result_items.collect { item -> 
+          	[
+          		format: item.format, 
+          		link: ocr_result_links[index++].toString()
+          	]
+          };
+          
+          results.each { item -> 
+          	if (!formatsInCache.contains(item.format)) {
+          	  jsonValueMaps << gson.toJson([
+                md5: ocr_document_hash.toString(), 
+                format: item.format, 
+                link: item.link
+              ])
+             }
           }
           
           /* global */ ocr_result = [
