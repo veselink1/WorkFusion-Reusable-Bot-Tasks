@@ -11,7 +11,8 @@
 
     <!-- the input document URL -->
     <var-def name="ocr_input" overwrite="false">
-        <var name="original_document_url" />
+        <!-- <var name="original_document_url" /> -->
+        http://aa-materials.s3.amazonaws.com/Materials/ML_Auto/PDFs/Document-01.pdf
     </var-def>
 
     <!-- comma-separated list of up to 3 formats (one of: txt, html, xml, xmlForCorrectedImage) -->
@@ -121,7 +122,9 @@
     <script><![CDATA[
        	// If not all formats are cached, we can just invoke OCR with all the formats. 
        	// ABBY's pricing model counts number of documents, not formats. 
-    	/* global */ is_cached = (cache_lookup_result.wrappedObject.size() == ocr_export_format.toList().size())
+       	List<String> cachedFormats = cache_lookup_result.wrappedObject.collect { it.get('format') }
+       	List<String> exportFormats = ocr_export_format.toList()
+    	/* global */ is_cached = exportFormats.every { cachedFormats.contains(it) }
     ]]></script>
   
     <var-def name="ocr_results" />
@@ -129,15 +132,15 @@
   	<case>
       <if condition="${is_cached}">
       	<script><![CDATA[
-            def results = [:]
+            List<Map> results = []
             for (def row : cache_lookup_result.wrappedObject) {
-            	results.put(row.get("format"), row.get("link"))
+            	results << [
+            		format: row.get("format"), 
+            		link: row.get("link")
+            	]
             }
             
-        	/* global */ ocr_result = [
-              source: ocr_input.toString(),
-              results: results,
-            ]
+		  	sys.defineVariable('ocr_results', results)
         ]]></script>
       </if>
       <else>
@@ -203,17 +206,17 @@
         
         <script><![CDATA[
           def gson = new com.google.gson.Gson();
-          def formatsInCache = cache_lookup_result.wrappedObject.collect { it.get("format") }
+          List<String> formatsInCache = cache_lookup_result.wrappedObject.collect { it.get("format") }
           
-          /* global */ jsonValueMaps = []
-          def index = 0;
-          def results = ocr_result_items.collect { item -> 
-          	[
+          int index = 0;
+          List<Map> results = ocr_result_items.collect { item -> 
+        
           		format: item.format, 
           		link: ocr_result_links[index++].toString()
           	]
           };
           
+          /* global */ jsonValueMaps = []
           results.each { item -> 
           	if (!formatsInCache.contains(item.format)) {
           	  jsonValueMaps << gson.toJson([
@@ -224,10 +227,7 @@
              }
           }
           
-          /* global */ ocr_result = [
-            source: ocr_input.toString(),
-            results: results,
-          ]
+		  sys.defineVariable('ocr_results', results)
         ]]></script>
           
         <loop item="jsonValueMap">
@@ -238,9 +238,20 @@
         </loop>
       </else>
     </case>
+    
+    <script><![CDATA[
+    	sys.defineVariable('ocr_result_indices', (0..<ocr_results.size()).toList())
+    ]]></script>
 
     <export include-original-data="true">
-    	<single-column name="ocr_result" value="${ocr_result}" />
+		<loop item="ocr_result_index">
+			<list><script return="ocr_result_indices" /></list>
+			<body>
+				<single-column 
+					name="ocr_export_${ocr_results[ocr_result_index.toInt()].wrappedObject.format}" 
+					value="${ocr_results[ocr_result_index.toInt()].wrappedObject.link}" />
+			</body>
+		</loop>
     </export>
 
 </config>
