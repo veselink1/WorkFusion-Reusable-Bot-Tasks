@@ -2,12 +2,15 @@
 
 ## BP 
 - Doing a plain copy is rarely sufficient and should be used only when you plan on not changing the BP workflow, as changes will affect the original BP (and/or Use Case). Prefer using deep copies.
-
+- Preserving input data throughout the BP will result in `start_date` and `author` columns being added to the results. 
 
 ## Bot Configs
 - Only export primitive value types within the `<export>` tag. Other types get converted to string via `toString()`. Prefer `<multi-column>`, generate `<single-column>` output via `<loop>`, or use JSON when exporting and aggregate (com.google.gson.Gson#toJson).
 - Use `log.error(obj)` for logging data to the Results tab of the BP (there is a 1000 character limit). 
 - When declaring default input's for a bot config you are testing, prefer using `<var-def name="..." overwrite="false">` so that you can later override these inputs via the Input Data/ETL Bot if needed. 
+
+## Data Stores
+- The result of a query implements `List`. Accessing the columns of a record via index or name returns a NodeVariable. Don't forget to convert it to the appropriate type.
 
 
 ## S3
