@@ -8,3 +8,6 @@
 
 ## S3
 - The `S3#putToFileS3` method simply *does NOT* work and is not supported. Use the <s3-put> plugin. 
+
+## Miscellaneous
+- As a general rule of thumb, prefer `<script return="varname" />` when providing input to elements instead of `${varname}`, as some elements require an explicit `<template>` tag to allow interpolation. `<script>` is simply less problematic. 
