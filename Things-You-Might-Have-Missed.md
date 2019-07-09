@@ -10,7 +10,7 @@
 
 ## Scripting
 - Use `log.warn(obj)` for logging data to the Results tab of the BP (there is a 1000 character limit). 
-- Wrap your Groovy code in a top-level try-catch block, then use `log.error(e.message, org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e))` to log the error to get proper stack-traces. Also do not forget to rethrow the exception via `throw e` to halt the BP.
+- Wrap your Groovy code in a top-level try-catch block, then use `log.error(e.message, org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e))` to log the error to get proper stack-traces. Also do not forget to rethrow the exception via `throw e` to halt the execution OR use the [stack trace sanitization](https://github.com/veselink1/WorkFusion-Reusable-Bot-Tasks/blob/master/scripts/sanitize-stacktraces.groovy) utility
 - You can use the `@groovy.transform.TypeChecked` attribute to verify code at compile-time. 
 - You can paste a file's URL address in the Windows Open File Dialog, instead of downloading the file first and then pasting the downloaded file's path. The file is downloaded as an IE temporary file and is then stored in a hidden folder under %localappdata%\Microsoft\Windows\INetCache\IE\. IE temp files are deleted automatically only when Storage Sense (Win10 feature) is enabled, and otherwise have to be manually deleted.
 
