@@ -1,11 +1,12 @@
-/*
- * Example usage:  
+/**
+ * <example>
  * sanitizeStackTraces {
  *   ...my groovy code...
  * }
+ * </example>
  */
 
-def sanitizeStackTraces(Closure block) {
+Object sanitizeStackTraces(Closure block) {
     try {
         return block()
     }
