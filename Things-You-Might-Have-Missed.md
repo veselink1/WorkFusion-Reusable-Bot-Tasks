@@ -6,11 +6,15 @@
 
 ## Bot Configs
 - Only export primitive value types within the `<export>` tag. Other types get converted to string via `toString()`. Prefer `<multi-column>`, generate `<single-column>` output via `<loop>`, or use JSON when exporting and aggregate (com.google.gson.Gson#toJson).
-- Use `log.error(obj)` for logging data to the Results tab of the BP (there is a 1000 character limit). 
 - When declaring default input's for a bot config you are testing, prefer using `<var-def name="..." overwrite="false">` so that you can later override these inputs via the Input Data/ETL Bot if needed. 
 
+## Scripting
+- Use `log.warn(obj)` for logging data to the Results tab of the BP (there is a 1000 character limit). 
+- Wrap your Groovy code in a top-level try-catch block, then use `log.error(e.message, org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e))` to log the error to get proper stack-traces. Also do not forget to rethrow the exception via `throw e` to halt the BP.
+- Prefer using the `@groovy.transform.TypeChecked` attribute to verify code at compile-time. 
+
 ## Data Stores
-- The result of a query implements `List`. Accessing the columns of a record via index or name returns a NodeVariable. Don't forget to convert it to the appropriate type.
+- The result of a query implements `List`. Accessing the columns of a record via index or name returns a `NodeVariable`. Don't forget to convert it to the appropriate type.
 
 
 ## S3
@@ -20,4 +24,3 @@
 
 ## Miscellaneous
 - As a general rule of thumb, prefer `<script return="varname" />` when providing input to elements instead of `${varname}`, as some elements require an explicit `<template>` tag to allow interpolation. `<script>` is simply less problematic. 
-
