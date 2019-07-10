@@ -22,7 +22,7 @@
 
 ## File Handling
 - You can paste a file's URL address in the Windows Open File Dialog, instead of downloading the file first and then pasting the downloaded file's path. The file is downloaded as an IE temporary file and is then stored in a hidden folder under %localappdata%\Microsoft\Windows\INetCache\IE\. IE temp files are deleted automatically only when Storage Sense (Win10 feature) is enabled, and otherwise have to be manually deleted.
-- Prefer uploading files to S3 and then following the above tip, uploading to S3 and using the `downloadFileOnAgent` method or use the [create-file-on-agent](https://github.com/veselink1/WorkFusion-Reusable-Bot-Tasks/blob/master/scripts/create-file-on-agent.groovy) script
+- Prefer uploading files to S3 and then following the above tip, uploading to S3 and using the `downloadFileOnAgent` method or use the lesser-known `sendToAgent` method to directly upload a blob to the agent.
 
 ## Miscellaneous
 - As a general rule of thumb, prefer `<script return="varname" />` when providing input to elements instead of `${varname}`, as some elements require an explicit `<template>` tag to allow interpolation. `<script>` is simply less problematic. 
