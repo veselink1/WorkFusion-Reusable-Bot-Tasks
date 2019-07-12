@@ -5,7 +5,7 @@
 - Preserving input data throughout the BP will result in `start_date` and `author` columns being added to the results. 
 
 ## Bot Configs
-- Only export primitive value types within the [`<export>`](https://kb.workfusion.com/display/WF/export) tag. Other types get converted to string via `toString()`. Prefer `<multi-column>`, generate `<single-column>` output via `<loop>`, or use JSON when exporting and aggregate ([`com.google.gson.Gson#toJson`](https://static.javadoc.io/com.google.code.gson/gson/2.8.5/com/google/gson/Gson.html#toJson-com.google.gson.JsonElement-)).
+- Only export primitive value types within the [`<export>`](https://kb.workfusion.com/display/WF/export) tag. Other types get converted to string via `toString()`. Prefer `<multi-column>`, generate `<single-column>` output via [`<loop>`](http://web-harvest.sourceforge.net/manual.php#loop), or use JSON when exporting and aggregate ([`com.google.gson.Gson#toJson`](https://static.javadoc.io/com.google.code.gson/gson/2.8.5/com/google/gson/Gson.html#toJson-com.google.gson.JsonElement-)).
 - When declaring default input's for a bot config you are testing, prefer using [`<var-def name="..." overwrite="false">`](http://web-harvest.sourceforge.net/manual.php#var-def) so that you can later override these inputs via the Input Data/ETL Bot if needed. 
 
 ## General Scripting
