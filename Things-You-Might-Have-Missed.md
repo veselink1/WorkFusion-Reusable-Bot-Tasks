@@ -11,7 +11,7 @@
 ## General Scripting
 - Use `log.warn(obj)` for logging data to the Results tab of the BP (there is a 1000 character limit). 
 - Wrap your Groovy code in a top-level try-catch block, then use [`log.error(e.message, org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e))`](http://docs.groovy-lang.org/2.2.1/html/api/org/codehaus/groovy/runtime/StackTraceUtils.html#sanitize(java.lang.Throwable)) to log the error to get proper stack-traces. Also do not forget to rethrow the exception via `throw e` to halt the execution OR use the [stack trace sanitization](https://github.com/veselink1/WorkFusion-Reusable-Bot-Tasks/blob/master/scripts/sanitize-stacktraces.groovy) utility
-- You can use the `@groovy.transform.TypeChecked` attribute to verify code at compile-time. 
+- You can use the [`@groovy.transform.TypeChecked`](http://docs.groovy-lang.org/latest/html/gapi/groovy/transform/TypeChecked.html) attribute to verify code at compile-time. 
 
 ## Data Stores
 - The result of a query implements [`List`](https://docs.oracle.com/javase/8/docs/api/java/util/List.html). Accessing the columns of a record via index or name returns a [`NodeVariable`](http://web-harvest.sourceforge.net/doc/org/webharvest/runtime/variables/NodeVariable.html). Don't forget to convert it to the appropriate type.
