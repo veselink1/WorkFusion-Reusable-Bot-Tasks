@@ -21,8 +21,8 @@
 - Using multiple `<s3-put>` in a parent `<s3>` and storing the result of that in a variable creates a list of the resulting links, but also allows simultaneous upload for multiple files.
 
 ## File Handling
-- You can paste a file's URL address in the Windows Open File Dialog, instead of downloading the file first and then pasting the downloaded file's path. The file is downloaded as an IE temporary file and is then stored in a hidden folder under %localappdata%\Microsoft\Windows\INetCache\IE\. IE temp files are deleted automatically only when Storage Sense (Win10 feature) is enabled, and otherwise have to be manually deleted.
 - Prefer uploading files to S3 and then following the above tip, uploading to S3 and using the `downloadFileOnAgent` method or use the lesser-known `sendToAgent` method to directly upload a blob to the agent.
+- **Not recommended** You can paste a file's URL address in the Windows Open File Dialog, instead of downloading the file first and then pasting the downloaded file's path. The file is downloaded as an IE temporary file and is then stored in a hidden folder under %localappdata%\Microsoft\Windows\INetCache\IE\. IE temp files are deleted automatically only when Storage Sense (Win10 feature) is enabled, and otherwise have to be manually deleted. Generally not recommended as explicit wait through sleep() is needed to wait for Windows to download the file and attach it.
 
 ## Miscellaneous
 - As a general rule of thumb, prefer `<script return="varname" />` when providing input to elements instead of `${varname}`, as some elements require an explicit `<template>` tag to allow interpolation. `<script>` is simply less problematic. 
