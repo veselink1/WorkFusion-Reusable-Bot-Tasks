@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config charset="UTF-8" scriptlang="groovy">
+  <!--
+    This bot config should be followed by a Decision Rule 
+    with the following properties:
+      Streaming=100%
+      Outcome:
+        is_main_flow [equals] true
+  -->
+  <var-def name="passthrough_hit_id">
+    <cache key="Cache.SEF.${item.getWrappedObject().getRun().getRootRunUuid()}" return="hit_id">
+      <var-def name="hit_id"><script return="${hit_submission_data_item.getWrappedObject().getId().toString()}" /></var-def>
+    </cache>
+  </var-def>
+  <var-def name="current_hit_id"><script return="${hit_submission_data_item.getWrappedObject().getId().toString()}" /></var-def>
+	<export include-original-data="true">
+      <single-column name="is_main_flow" value="${current_hit_id.toString() == passthrough_hit_id.toString()}" />
+	</export>
+</config>

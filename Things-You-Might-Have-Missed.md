@@ -3,6 +3,7 @@
 ## Business Processes
 - Doing a plain copy is rarely sufficient and should be used only when you plan on not changing the BP workflow, as changes will affect the original BP (and/or Use Case). Prefer using deep copies.
 - Preserving input data throughout the BP will result in `start_date` and `author` columns being added to the results. 
+- See the [Single Execution Flow](https://github.com/veselink1/WorkFusion-Reusable-Bot-Tasks/blob/master/scripts/single-execution-flow.xml) script to find an easy way to drop all previous records and continue the BP execution with a single execution flow.
 
 ## Bot Configs
 - Only export primitive value types within the [`<export>`](https://kb.workfusion.com/display/WF/export) tag. Other types get converted to string via `toString()`. Prefer `<multi-column>`, generate `<single-column>` output via [`<loop>`](http://web-harvest.sourceforge.net/manual.php#loop), or use JSON when exporting and aggregate ([`com.google.gson.Gson#toJson`](https://static.javadoc.io/com.google.code.gson/gson/2.8.5/com/google/gson/Gson.html#toJson-com.google.gson.JsonElement-)).
