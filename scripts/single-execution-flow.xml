@@ -8,12 +8,19 @@
         is_main_flow [equals] true
   -->
   <var-def name="passthrough_hit_id">
-    <cache key="Cache.SEF.${item.getWrappedObject().getRun().getRootRunUuid()}" return="hit_id">
-      <var-def name="hit_id"><script return="${hit_submission_data_item.getWrappedObject().getId().toString()}" /></var-def>
+    <cache key="Cache.SingleExecutionFlow.${item.getWrappedObject().getRun().getRootRunUuid()}" return="hit_id">
+      <!-- Cache the first Hit ID -->
+      <var-def name="hit_id">
+        <script return="${hit_submission_data_item.getWrappedObject().getId().toString()}" />
+      </var-def>
     </cache>
   </var-def>
-  <var-def name="current_hit_id"><script return="${hit_submission_data_item.getWrappedObject().getId().toString()}" /></var-def>
+  <!-- Take the current Hit ID -->
+  <var-def name="current_hit_id">
+    <script return="${hit_submission_data_item.getWrappedObject().getId().toString()}" />
+  </var-def>
 	<export include-original-data="true">
+      <!-- Check if the current Hit ID is also the first one. -->
       <single-column name="is_main_flow" value="${current_hit_id.toString() == passthrough_hit_id.toString()}" />
 	</export>
 </config>
