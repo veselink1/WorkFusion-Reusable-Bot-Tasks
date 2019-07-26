@@ -18,7 +18,7 @@
 - The result of a query implements [`List`](https://docs.oracle.com/javase/8/docs/api/java/util/List.html). Accessing the columns of a record via index or name returns a [`NodeVariable`](http://web-harvest.sourceforge.net/doc/org/webharvest/runtime/variables/NodeVariable.html). Don't forget to convert it to the appropriate type.
 
 ## S3
-- The [`S3#putToFileS3`](https://workfusion-docs.s3.amazonaws.com/rpa-simplified-api/latest/com/workfusion/rpa/helpers/S3.html#uploadFileS3-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-com.workfusion.rpa.helpers.S3OverwriteStrategy-) method simply **does NOT** work and is not supported. Use the [`<s3-put>`](https://kb.workfusion.com/display/WF/S3+Plugins#S3Plugins-s3-put) plugin. 
+- The [`S3#putToFileS3`](https://workfusion-docs.s3.amazonaws.com/rpa-simplified-api/latest/com/workfusion/rpa/helpers/S3.html#uploadFileS3-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-com.workfusion.rpa.helpers.S3OverwriteStrategy-) method takes a file path that should be available on the agent. The method **must** be used in conjunction with `downloadFileOnAgent` (and `deleteFileOnAgent`) or with another equivalent solution.
 - Using multiple [`<s3-put>`](https://kb.workfusion.com/display/WF/S3+Plugins#S3Plugins-s3-put) in a parent [`<s3>`](https://kb.workfusion.com/display/WF/S3+Plugins#S3Plugins-s3) and storing the result of that in a variable creates a list of the resulting links, but also allows simultaneous upload for multiple files.
 
 ## File Handling
