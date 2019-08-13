@@ -4,6 +4,7 @@
  - [Things You Might Have Missed](https://github.com/veselink1/WorkFusion-Reusable-Bot-Tasks/blob/master/Things-You-Might-Have-Missed.md) - A list of comments and pieces of advice that might be of help 
  - [Sanitize StackTrace](https://github.com/veselink1/WorkFusion-Reusable-Bot-Tasks/blob/master/scripts/sanitize-stacktraces.groovy) - Sanitizing Groovy's StackTrace results in an easier to read trace by elliminating the traces resulting from dynamic method resolution. 
 - [Single Execution Flow](https://github.com/veselink1/WorkFusion-Reusable-Bot-Tasks/blob/master/scripts/single-execution-flow.xml) - Join multiple BP execution flows into a single one.
+- [Call WebHarvest From Groovy](https://github.com/veselink1/WorkFusion-Reusable-Bot-Tasks/blob/master/scripts/call-webharvest-from-script.groovy) - Call Web-Havest's `<function />` elements from Groovy.
 
 ## Useful links
 - [Simplified Bot API](https://workfusion-docs.s3.amazonaws.com/rpa-simplified-api/latest/com/workfusion/rpa/helpers/RPA.html)
